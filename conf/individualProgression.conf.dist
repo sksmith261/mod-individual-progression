@@ -450,6 +450,25 @@ IndividualProgression.BotAccountsMaxLevel = 80
 #
 IndividualProgression.BotAccountsRegex = "^RNDBOT.*"
 
+# IndividualProgression.BotsSkipProgression
+#
+#        Description: Exempt bot accounts (matched by BotAccountsRegex) from progression
+#                     gating entirely, treating them as having completed every tier.
+#
+#                     Progression level is read from the hidden 66000+N quests, which bots
+#                     never complete, so by default every bot is stuck at Vanilla forever.
+#                     On a server where bots are levelled across all expansions and exist
+#                     as scenery rather than as participants, that is incoherent: max-level
+#                     bots questing in Northrend are still treated as pre-Molten Core.
+#
+#                     Enable this if bots should ignore progression. Leave disabled if bots
+#                     are meant to progress alongside players.
+#
+#        Default:     0 - Disabled (bots are gated like players)
+#                     1 - Enabled  (bots ignore progression gating)
+#
+IndividualProgression.BotsSkipProgression = 0
+
 # IndividualProgression.ExcludedAccountsRegex
 #
 #        Description: A regular expression to match account names that should be excluded from Individual Progression.

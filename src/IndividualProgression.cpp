@@ -32,6 +32,15 @@ bool IndividualProgression::hasPassedProgression(Player* player, ProgressionStat
     if (!enabled || !state || !player || !player->IsInWorld())
         return false;
 
+    // Progression level is derived purely from the hidden 66000+N quests in
+    // GetPlayerProgressionFromQuests. Playerbots never complete those, so without this
+    // they sit at progressionLevel 0 forever and are locked to Vanilla content — which
+    // is incoherent on a server where bots are levelled across all expansions and are
+    // meant to be scenery rather than participants in the progression system.
+    // BotAccountsRegex already defines what a bot is; this just honours it here too.
+    if (BotsSkipProgression && sIndividualProgression->isBotAccount(player))
+        return true;
+
     if (progressionLimit && (state > progressionLimit))
         return false;
 
@@ -41,6 +50,12 @@ bool IndividualProgression::hasPassedProgression(Player* player, ProgressionStat
 bool IndividualProgression::isBeforeProgression(Player* player, ProgressionState state)
 {
     if (!state || !player || !player->IsInWorld())
+        return false;
+
+    // Mirror of the exemption in hasPassedProgression — a bot that has passed everything
+    // is by definition before nothing. Both must agree or callers that branch on the two
+    // (see the AQ war / Scourge Invasion checks) would see a contradictory state.
+    if (sIndividualProgression->BotsSkipProgression && sIndividualProgression->isBotAccount(player))
         return false;
 
     return sIndividualProgression->GetPlayerProgressionFromQuests(player) < state;
@@ -1086,6 +1101,7 @@ private:
         sIndividualProgression->BotOnlyAdjustments = sConfigMgr->GetOption<bool>("IndividualProgression.BotOnlyAdjustments", false);
         sIndividualProgression->excludedAccountsRegex = sConfigMgr->GetOption<std::string>("IndividualProgression.ExcludedAccountsRegex", "");
         sIndividualProgression->botAccountsRegex = sConfigMgr->GetOption<std::string>("IndividualProgression.BotAccountsRegex", "^RNDBOT.*");
+        sIndividualProgression->BotsSkipProgression = sConfigMgr->GetOption<bool>("IndividualProgression.BotsSkipProgression", false);
         sIndividualProgression->EnableSetRepCommand = sConfigMgr->GetOption<bool>("IndividualProgression.EnableSetRepCommand", false);
         sIndividualProgression->EnableAllSpellRanks = sConfigMgr->GetOption<bool>("IndividualProgression.EnableAllSpellRanks", false);
         sIndividualProgression->LimitedSetRepCommand = sConfigMgr->GetOption<bool>("IndividualProgression.LimitedSetRepCommand", true);
