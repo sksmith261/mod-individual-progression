@@ -75,13 +75,25 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 --
 -- Rationale: Hydraxian Waterlords reputation is earned almost entirely from Molten Core boss kills,
 -- so requiring Revered (21000) to obtain the item that unlocks the back half of Molten Core meant
--- roughly ten full clears before a group could reach Majordomo. The 6824 chain itself has no
--- reputation requirement at any step, and Hand of Shazzrah is a 100% drop from the 4th of the 7
--- runed bosses, so a group can now complete the questline and douse all 7 runes on a first clear.
--- Pair this with IndividualProgression.MoltenCore.AqualEssenceCooldownReduction = 60, or the item's
+-- roughly ten full clears before a group could reach Majordomo. Hand of Shazzrah is a 100% drop
+-- from the 4th of the 7 runed bosses, so a group can now complete the questline and douse all 7
+-- runes on a first clear. Note the chain is NOT rep-free on its own: quest 6823's sole objective
+-- is reaching Honored (9000) — see the quest_template UPDATE below that zeroes it. Pair all of
+-- this with IndividualProgression.MoltenCore.AqualEssenceCooldownReduction = 60, or the item's
 -- 1 hour cooldown makes dousing 7 runes a 7 hour job.
 (15, 5065, 1, 0, 0, 5, 0, 749, 248, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Eternal Quintessence Gossip - Requires Neutral Rep'),
 (15, 5065, 1, 0, 0, 47, 0, 6824, 64, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Eternal Quintessence Gossip - Requires Hand of the Enemy rewarded');
+
+-- Reizan: quest 6823 (Agent of Hydraxis) is the questline's only reputation gate — its sole
+-- objective is "reach 9000 (Honored) with faction 749" via RequiredFactionId1/Value1, stock
+-- ACDB values this file previously left untouched. With the Eternal gossip above lowered to
+-- Neutral, that objective became the binding constraint: nobody could reach the 6824 turn-in
+-- without first grinding to Honored, which put the ten-clears problem right back.
+-- Zeroing RequiredFactionValue1 makes 6823 completable the moment it is accepted (everyone
+-- starts at Neutral 0, and 749 has no BaseRep entries so nobody can sit below 0). The quest
+-- chain itself stays fully mandatory and unchanged: Poisoned Water through The Molten Core,
+-- then this instant turn-in, then Hands of the Enemy's four boss kills gate the item as before.
+UPDATE `quest_template` SET `RequiredFactionValue1` = 0 WHERE `ID` = 6823 AND `RequiredFactionId1` = 749;
 
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 19 AND `SourceEntry` IN (6822, 6823, 6824, 7486);
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, 
