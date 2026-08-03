@@ -68,7 +68,19 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
 (15, 5065, 0, 0, 0, 5, 0, 749, 224, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Aqual Quintessence Gossip - Requires Honored Rep'),
 (15, 5065, 0, 0, 0, 47, 0, 6824, 64, 0, 0, 0, 0, '', 'Duke Hydraxis - Aqual Quintessence Gossip available if quest Hand of the Enemy rewarded.'),
-(15, 5065, 1, 0, 0, 5, 0, 749, 192, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Eternal Quintessence Gossip - Requires Revered Rep'),
+-- Reizan: Eternal Quintessence lowered from Revered (192) to Neutral-or-better (248).
+-- ConditionValue2 is a bitmask of (1 << ReputationRank), so 248 = Neutral|Friendly|Honored|Revered|Exalted.
+-- Every character starts at Neutral with 749 (no BaseRepRaceMask/ClassMask entries), so in practice
+-- this removes the reputation gate while leaving the quest gate on 6824 fully intact.
+--
+-- Rationale: Hydraxian Waterlords reputation is earned almost entirely from Molten Core boss kills,
+-- so requiring Revered (21000) to obtain the item that unlocks the back half of Molten Core meant
+-- roughly ten full clears before a group could reach Majordomo. The 6824 chain itself has no
+-- reputation requirement at any step, and Hand of Shazzrah is a 100% drop from the 4th of the 7
+-- runed bosses, so a group can now complete the questline and douse all 7 runes on a first clear.
+-- Pair this with IndividualProgression.MoltenCore.AqualEssenceCooldownReduction = 60, or the item's
+-- 1 hour cooldown makes dousing 7 runes a 7 hour job.
+(15, 5065, 1, 0, 0, 5, 0, 749, 248, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Eternal Quintessence Gossip - Requires Neutral Rep'),
 (15, 5065, 1, 0, 0, 47, 0, 6824, 64, 0, 0, 0, 0, '', 'Duke Hydraxis - Create Eternal Quintessence Gossip - Requires Hand of the Enemy rewarded');
 
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 19 AND `SourceEntry` IN (6822, 6823, 6824, 7486);

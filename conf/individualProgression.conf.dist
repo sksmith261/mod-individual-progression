@@ -469,6 +469,35 @@ IndividualProgression.BotAccountsRegex = "^RNDBOT.*"
 #
 IndividualProgression.BotsSkipProgression = 0
 
+# IndividualProgression.AccountWideProgression
+#
+#        Description: Make progression account-wide instead of per-character. At login, a
+#                     character is advanced to the highest progression level reached by any
+#                     character on the same account, so progression is earned once and alts
+#                     start where the account already stands.
+#
+#                     The level is the maximum across all characters on the account — there is
+#                     no designated "main", and faction does not matter, since the characters
+#                     table is scoped per realm rather than per side.
+#
+#                     This is a sync at login, not shared live state: an alt picks up the
+#                     account level when it logs in, so progress earned elsewhere while it is
+#                     already online is not seen until it relogs.
+#
+#                     The account level is derived live rather than stored as a high-water
+#                     mark, so deleting the furthest-along character lowers it. Characters that
+#                     already synced keep their granted quests and never regress; only new or
+#                     not-since-logged-in characters inherit the reduced level.
+#
+#                     Note this removes progression GATES for alts, but does not restore the
+#                     world itself. The module's base SQL rewrites quest and creature data to
+#                     Vanilla values for every player regardless of progression level.
+#
+#        Default:     0 - Disabled (progression is per-character)
+#                     1 - Enabled  (progression is shared across the account)
+#
+IndividualProgression.AccountWideProgression = 0
+
 # IndividualProgression.ExcludedAccountsRegex
 #
 #        Description: A regular expression to match account names that should be excluded from Individual Progression.

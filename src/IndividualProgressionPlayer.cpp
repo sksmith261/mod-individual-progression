@@ -54,6 +54,28 @@ public:
                 sIndividualProgression->UpdateProgressionState(player, static_cast<ProgressionState>(sIndividualProgression->startingProgression));
             }
 
+            // Account-wide progression: bring this character up to the furthest point any
+            // character on the account has reached. Every gate in the module reads progression
+            // via GetPlayerProgressionFromQuests (the hidden 66000+N rewarded quests), so
+            // granting those quests here is enough — zone/raid locks, stat adjustments and
+            // CheckAdjustments all follow without touching their individual call sites.
+            //
+            // Deliberately after the StartingProgression block: both only ever move a character
+            // forward, so order does not change the outcome, but running last means the account
+            // level wins outright rather than being capped by a lower starting floor.
+            //
+            // UpdateProgressionState (not ForceUpdate...) is required here: it respects
+            // ProgressionLimit and only advances, so it cannot roll a character backwards if the
+            // account level drops — which it can, since GetAccountProgression is derived live and
+            // a soft-deleted character (account set to 0) stops counting toward it.
+            if (sIndividualProgression->AccountWideProgression)
+            {
+                uint8 accountState = IndividualProgression::GetAccountProgression(player->GetSession()->GetAccountId());
+
+                if (accountState > sIndividualProgression->GetPlayerProgressionFromQuests(player))
+                    sIndividualProgression->UpdateProgressionState(player, static_cast<ProgressionState>(accountState));
+            }
+
             sIndividualProgression->checkIPProgression(player);
         }
 
