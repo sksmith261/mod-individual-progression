@@ -1303,10 +1303,27 @@ public:
         sIndividualProgression->checkIPPhasing(player, newArea);
     }
 
-    bool OnPlayerCanEquipItem(Player* player, uint8 /*slot*/, uint16& /*dest*/, Item* pItem, bool /*swap*/, bool /*not_loading*/) override
+    bool OnPlayerCanUseItem(Player* player, ItemTemplate const* proto, InventoryResult& result) override
+    {
+        if (!sIndividualProgression->IsItemGated(player, proto))
+            return true;
+
+        result = EQUIP_ERR_CANT_EQUIP_RANK;
+        return false;
+    }
+
+    bool OnPlayerCanEquipItem(Player* player, uint8 /*slot*/, uint16& /*dest*/, Item* pItem, bool /*swap*/, bool not_loading) override
     {
         if (!player || !pItem)
             return false;
+
+        // CanUseItem() below this hook already rejects gated items; this only adds the
+        // explanation on a deliberate equip attempt, where a chat message can't spam.
+        if (not_loading && sIndividualProgression->IsItemGated(player, pItem->GetTemplate()))
+        {
+            ChatHandler(player->GetSession()).PSendSysMessage("Progression Level Required = |cff00ffff{}|r", uint32(sIndividualProgression->GetItemRequiredProgression(pItem->GetTemplate())));
+            return false;
+        }
 
         if (pItem->GetTemplate()->RequiredHonorRank == 0)
             return true;

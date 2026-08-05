@@ -29,6 +29,47 @@ IndividualProgression.Enable = 1
 #
 IndividualProgression.EnforceGroupRules = 0
 
+# IndividualProgression.ItemGating.Enable
+#
+#        Description: Prevent players from using or equipping weapons, armor, and projectiles
+#                     from content beyond their current progression level, no matter how the
+#                     item was obtained (auction house, trade, mail, vendor).
+#                     Attempting to equip a gated item shows the required progression level.
+#                     Bot and excluded accounts are never gated. Game Masters are exempt.
+#
+#        Default:     0 - Disabled
+#                     1 - Enabled
+#
+IndividualProgression.ItemGating.Enable = 0
+
+# IndividualProgression.ItemGating.UncommonItemLevelCaps
+# IndividualProgression.ItemGating.RareItemLevelCaps
+# IndividualProgression.ItemGating.EpicItemLevelCaps
+#
+#        Description: Comma-separated list of the highest allowed ItemLevel at each
+#                     progression level 0-18, one list per quality band:
+#                     Uncommon covers Poor/Common/Uncommon, Rare covers Rare, and
+#                     Epic covers Epic and above (legendaries, heirlooms).
+#                     Uncommon/Rare caps only rise when the next expansion's leveling zones
+#                     unlock (Outland at 8, Northrend at 13) so leveling gear is never blocked.
+#                     Empty uses the defaults below. A shorter list overrides from the front.
+#
+#        Default:     Uncommon: "68,68,68,68,68,68,68,68,120,120,120,120,120,999,999,999,999,999,999"
+#                     Rare:     "84,84,84,84,84,84,84,84,126,126,126,126,126,999,999,999,999,999,999"
+#                     Epic:     "83,86,86,86,92,92,92,92,128,141,156,156,164,226,252,258,284,284,999"
+#
+IndividualProgression.ItemGating.UncommonItemLevelCaps = ""
+IndividualProgression.ItemGating.RareItemLevelCaps = ""
+IndividualProgression.ItemGating.EpicItemLevelCaps = ""
+
+# IndividualProgression.ItemGating.ExemptItemIDs
+#
+#        Description: Comma-separated item IDs that are never gated.
+#
+#        Default:     ""
+#
+IndividualProgression.ItemGating.ExemptItemIDs = ""
+
 # IndividualProgression.VanillaPowerAdjustment
 #
 #        Description: Adjustment to player's attack power before completing Vanilla content and opening the Dark Portal

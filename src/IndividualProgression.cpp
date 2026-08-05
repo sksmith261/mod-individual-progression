@@ -357,6 +357,86 @@ void IndividualProgression::LoadCustomProgressionEntries(std::string const& cust
     }
 }
 
+// Highest ItemLevel legitimately obtainable at each ProgressionState, per quality band.
+// Uncommon/rare caps only rise when the next expansion's leveling zones unlock (Outland
+// at PRE_TBC, Northrend at TBC_TIER_5), so leveling gear is never blocked for players
+// already allowed onto those continents.
+static constexpr std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1> DEFAULT_UNCOMMON_ITEM_CAPS = { 68, 68, 68, 68, 68, 68, 68, 68, 120, 120, 120, 120, 120, 999, 999, 999, 999, 999, 999 };
+static constexpr std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1> DEFAULT_RARE_ITEM_CAPS     = { 84, 84, 84, 84, 84, 84, 84, 84, 126, 126, 126, 126, 126, 999, 999, 999, 999, 999, 999 };
+static constexpr std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1> DEFAULT_EPIC_ITEM_CAPS     = { 83, 86, 86, 86, 92, 92, 92, 92, 128, 141, 156, 156, 164, 226, 252, 258, 284, 284, 999 };
+
+static void LoadItemLevelCapOverrides(std::string const& capString, std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1>& caps)
+{
+    std::string delimitedValue;
+    std::stringstream capStream(capString);
+    std::size_t index = 0;
+    while (std::getline(capStream, delimitedValue, ',') && index < caps.size())
+        caps[index++] = uint16(atoi(delimitedValue.c_str()));
+}
+
+void IndividualProgression::LoadItemGatingConfig()
+{
+    itemGatingEnabled = sConfigMgr->GetOption<bool>("IndividualProgression.ItemGating.Enable", false);
+
+    itemGatingUncommonCaps = DEFAULT_UNCOMMON_ITEM_CAPS;
+    itemGatingRareCaps = DEFAULT_RARE_ITEM_CAPS;
+    itemGatingEpicCaps = DEFAULT_EPIC_ITEM_CAPS;
+    LoadItemLevelCapOverrides(sConfigMgr->GetOption<std::string>("IndividualProgression.ItemGating.UncommonItemLevelCaps", ""), itemGatingUncommonCaps);
+    LoadItemLevelCapOverrides(sConfigMgr->GetOption<std::string>("IndividualProgression.ItemGating.RareItemLevelCaps", ""), itemGatingRareCaps);
+    LoadItemLevelCapOverrides(sConfigMgr->GetOption<std::string>("IndividualProgression.ItemGating.EpicItemLevelCaps", ""), itemGatingEpicCaps);
+
+    itemGatingExemptItems.clear();
+    std::string delimitedValue;
+    std::stringstream exemptStream(sConfigMgr->GetOption<std::string>("IndividualProgression.ItemGating.ExemptItemIDs", ""));
+    while (std::getline(exemptStream, delimitedValue, ','))
+        if (uint32 itemId = atoi(delimitedValue.c_str()))
+            itemGatingExemptItems.insert(itemId);
+}
+
+std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1> const& IndividualProgression::GetItemGatingCaps(uint32 quality) const
+{
+    if (quality >= ITEM_QUALITY_EPIC)
+        return itemGatingEpicCaps;
+    if (quality == ITEM_QUALITY_RARE)
+        return itemGatingRareCaps;
+    return itemGatingUncommonCaps;
+}
+
+bool IndividualProgression::IsItemGated(Player* player, ItemTemplate const* proto) const
+{
+    if (!enabled || !itemGatingEnabled || !player || !proto)
+        return false;
+
+    // Progression can't be read before the player is in world (login inventory load),
+    // and failing the check there would strip already-equipped gear.
+    if (!player->IsInWorld())
+        return false;
+
+    if (player->IsGameMaster() || !sIndividualProgression->isNormalAccount(player))
+        return false;
+
+    if (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR && proto->Class != ITEM_CLASS_PROJECTILE)
+        return false;
+
+    if (itemGatingExemptItems.find(proto->ItemId) != itemGatingExemptItems.end())
+        return false;
+
+    uint8 progressionLevel = GetPlayerProgressionFromQuests(player);
+    if (progressionLevel >= PROGRESSION_WOTLK_TIER_5)
+        return false;
+
+    return proto->ItemLevel > GetItemGatingCaps(proto->Quality)[progressionLevel];
+}
+
+uint8 IndividualProgression::GetItemRequiredProgression(ItemTemplate const* proto) const
+{
+    std::array<uint16, PROGRESSION_WOTLK_TIER_5 + 1> const& caps = GetItemGatingCaps(proto->Quality);
+    for (uint8 state = 0; state < caps.size(); ++state)
+        if (proto->ItemLevel <= caps[state])
+            return state;
+    return PROGRESSION_WOTLK_TIER_5;
+}
+
 bool IndividualProgression::hasCustomProgressionValue(uint32 creatureEntry)
 {
     if (!creatureEntry)
@@ -1074,6 +1154,7 @@ private:
         sIndividualProgression->RequiredZulGurubProgression = sConfigMgr->GetOption<uint8>("IndividualProgression.RequiredZulGurubProgression", 3);
         sIndividualProgression->RequiredZulAmanProgression = sConfigMgr->GetOption<uint8>("IndividualProgression.RequiredZulAmanProgression", 12);
         sIndividualProgression->LoadCustomProgressionEntries(sConfigMgr->GetOption<std::string>("IndividualProgression.CustomProgression", ""));
+        sIndividualProgression->LoadItemGatingConfig();
         sIndividualProgression->earlyDungeonSet2 = sConfigMgr->GetOption<bool>("IndividualProgression.AllowEarlyDungeonSet2", false);
         sIndividualProgression->earlyScourgeBosses = sConfigMgr->GetOption<bool>("IndividualProgression.AllowEarlyScourgeBosses", false);
         sIndividualProgression->tbcArenaSeason = sConfigMgr->GetOption<uint8>("IndividualProgression.TBC.ArenaSeason", 1);
