@@ -5,6 +5,7 @@
 #include "IndividualProgression.h"
 #include "naxxramas_40.h"
 #include "ReputationMgr.h"
+#include <set>
 
 IndividualProgression* IndividualProgression::instance()
 {
@@ -457,6 +458,68 @@ bool IndividualProgression::isAttuned(Player* player)
         return true;
     else
         return false;
+}
+
+// Attunement gates are quest- or item-checks at the raid door, separate from the
+// progression tiers that AccountWideProgression mirrors. When enabled, a character
+// logging in inherits every attunement any character on the account has earned:
+// the gate quests are marked rewarded via SetRewardedQuest — which carries none of
+// RewardQuest's side effects (no XP, gold, titles or reward items) — and the three
+// doors that check for a physical item (Onyxia's Lair, Black Temple, The Eye) also
+// hand over the item when it is missing from both bags and bank. Runs every login,
+// so a bags-full failure self-heals the next time the character logs in.
+void IndividualProgression::GrantAccountWideAttunements(Player* player)
+{
+    if (!player || !player->IsInWorld() || !player->GetSession())
+        return;
+
+    static constexpr uint32 attunementQuests[] = {
+        ONYXIA_ATTUNEMENT_A, ONYXIA_ATTUNEMENT_H,
+        AKAMA_DISTRACTION_TBC, AKAMA_DISTRACTION_WOTLK, FALL_OF_THE_BETRAYER,
+        TRIAL_MAGTHERIDON, CUDGEL_OF_KARDESH, VIALS_OF_ETERNITY,
+        NAXX40_ATTUNEMENT_1, NAXX40_ATTUNEMENT_2, NAXX40_ATTUNEMENT_3
+    };
+
+    std::ostringstream questList;
+    for (uint32 questId : attunementQuests)
+        questList << (questList.tellp() ? "," : "") << questId;
+
+    QueryResult result = CharacterDatabase.Query(
+        "SELECT DISTINCT cc.quest FROM character_queststatus_rewarded cc JOIN characters c ON cc.guid = c.guid WHERE c.account = {} AND cc.quest IN ({})",
+        player->GetSession()->GetAccountId(), questList.str());
+
+    if (!result)
+        return;
+
+    std::set<uint32> earned;
+    do
+    {
+        earned.insert((*result)[0].Get<uint32>());
+    } while (result->NextRow());
+
+    // Mirror quest-rewarded status. Only quests this character has never touched are
+    // granted — a quest currently in the log stays there and completes normally.
+    for (uint32 questId : attunementQuests)
+        if (earned.count(questId) && player->GetQuestStatus(questId) == QUEST_STATUS_NONE)
+            player->SetRewardedQuest(questId);
+
+    // Doors that check for the physical item. A banked copy counts as owned and is
+    // the player's to fetch — same stance as UpdateGroupAttunement above.
+    auto giveItem = [&](uint32 itemId)
+    {
+        if (!player->HasItemCount(itemId, 1, true) && !player->AddItem(itemId, 1))
+            ChatHandler(player->GetSession()).PSendSysMessage("Your bags are full — an attunement item could not be added. It will be granted on your next login.");
+    };
+
+    if (earned.count(ONYXIA_ATTUNEMENT_A) || earned.count(ONYXIA_ATTUNEMENT_H))
+        giveItem(ITEM_DRAKEFIRE_AMULET);
+
+    if ((earned.count(AKAMA_DISTRACTION_TBC) || earned.count(AKAMA_DISTRACTION_WOTLK) || earned.count(FALL_OF_THE_BETRAYER))
+        && !player->HasItemCount(ITEM_BLESSED_MEDALLION_OF_KARABOR, 1, true))
+        giveItem(ITEM_MEDALLION_OF_KARABOR);
+
+    if (earned.count(TRIAL_MAGTHERIDON))
+        giveItem(ITEM_TEMPEST_KEY);
 }
 
 bool IndividualProgression::isExcludedAccount(Player* player)
@@ -1184,6 +1247,7 @@ private:
         sIndividualProgression->botAccountsRegex = sConfigMgr->GetOption<std::string>("IndividualProgression.BotAccountsRegex", "^RNDBOT.*");
         sIndividualProgression->BotsSkipProgression = sConfigMgr->GetOption<bool>("IndividualProgression.BotsSkipProgression", false);
         sIndividualProgression->AccountWideProgression = sConfigMgr->GetOption<bool>("IndividualProgression.AccountWideProgression", false);
+        sIndividualProgression->AccountWideAttunements = sConfigMgr->GetOption<bool>("IndividualProgression.AccountWideAttunements", false);
         sIndividualProgression->EnableSetRepCommand = sConfigMgr->GetOption<bool>("IndividualProgression.EnableSetRepCommand", false);
         sIndividualProgression->EnableAllSpellRanks = sConfigMgr->GetOption<bool>("IndividualProgression.EnableAllSpellRanks", false);
         sIndividualProgression->LimitedSetRepCommand = sConfigMgr->GetOption<bool>("IndividualProgression.LimitedSetRepCommand", true);

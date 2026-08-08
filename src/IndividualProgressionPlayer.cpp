@@ -76,6 +76,11 @@ public:
                     sIndividualProgression->UpdateProgressionState(player, static_cast<ProgressionState>(accountState));
             }
 
+            // Account-wide attunements: the quest/item door checks (Onyxia, BT, The Eye,
+            // SSC, Hyjal, Naxx40) that sit on top of the progression tiers mirrored above.
+            if (sIndividualProgression->AccountWideAttunements)
+                sIndividualProgression->GrantAccountWideAttunements(player);
+
             sIndividualProgression->checkIPProgression(player);
         }
 

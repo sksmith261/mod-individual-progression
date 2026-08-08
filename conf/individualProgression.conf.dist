@@ -539,6 +539,29 @@ IndividualProgression.BotsSkipProgression = 0
 #
 IndividualProgression.AccountWideProgression = 0
 
+# IndividualProgression.AccountWideAttunements
+#
+#        Description: Make raid attunements account-wide. The quest and item checks at raid
+#                     doors sit on top of the progression tiers, so AccountWideProgression
+#                     alone does not share them. When enabled, a character logging in inherits
+#                     every attunement any character on the account has earned:
+#
+#                     - Quest gates are marked rewarded (no XP, gold, title or item rewards
+#                       are given): The Cudgel of Kar'desh (SSC), The Vials of Eternity
+#                       (Hyjal), Trial of the Naaru: Magtheridon (The Eye), the Naxxramas 40
+#                       attunement, and the Onyxia / Black Temple questline enders.
+#                     - Doors that require a physical item — Onyxia's Lair (Drakefire Amulet),
+#                       Black Temple (Medallion of Karabor), The Eye (Tempest Key) — also
+#                       hand the item to the character if it is in neither bags nor bank.
+#
+#                     Like AccountWideProgression this is a sync at login, faction-blind, and
+#                     never removes anything a character already has.
+#
+#        Default:     0 - Disabled (attunements are per-character)
+#                     1 - Enabled  (attunements are shared across the account)
+#
+IndividualProgression.AccountWideAttunements = 0
+
 # IndividualProgression.ExcludedAccountsRegex
 #
 #        Description: A regular expression to match account names that should be excluded from Individual Progression.

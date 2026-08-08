@@ -74,10 +74,15 @@ enum ProgressionQuestIDs
     QUEST_THE_ANCIENT_LEAF    = 7632,
     MIGHT_OF_KALIMDOR         = 8742,
     BANG_A_GONG               = 8743,
+    ONYXIA_ATTUNEMENT_A       = 6502,   // Drakefire Amulet (rewards ITEM_DRAKEFIRE_AMULET)
+    ONYXIA_ATTUNEMENT_H       = 6602,   // Blood of the Black Dragon Champion (rewards ITEM_DRAKEFIRE_AMULET)
     INTO_THE_BREACH           = 10259,
     VIALS_OF_ETERNITY         = 10445,
     TRIAL_MAGTHERIDON         = 10888,
     CUDGEL_OF_KARDESH         = 10901,
+    AKAMA_DISTRACTION_TBC     = 10985,  // A Distraction for Akama, pre-3.0 (rewards ITEM_MEDALLION_OF_KARABOR)
+    FALL_OF_THE_BETRAYER      = 10959,  // rewards ITEM_BLESSED_MEDALLION_OF_KARABOR
+    AKAMA_DISTRACTION_WOTLK   = 13429,  // A Distraction for Akama, 3.0 version
     BATTLE_UNDERCITY_HORDE    = 13267,
     BATTLE_UNDERCITY_ALLIANCE = 13377,
     SIMPLY_BANG_A_GONG        = 108743,
@@ -407,7 +412,7 @@ public:
     std::map<uint32, uint8> customProgressionMap;
     questXpMapType questXpMap;
     float vanillaPowerAdjustment, tbcPowerAdjustment, vanillaHealingAdjustment, tbcHealingAdjustment;
-    bool enabled, questXpFix, enforceGroupRules, EnableSetRepCommand, EnableAllSpellRanks, LimitedSetRepCommand, fishingFix, simpleConfigOverride, MaxMonsterSight, questMoneyAtLevelCap, repeatableVanillaQuestsXp, disableDefaultProgression, earlyDungeonSet2, earlyScourgeBosses, requireNaxxStrath, doableNaxx40Bosses_4H, doableNaxx40Bosses_Gluth, doableNaxx40Bosses_Patchwerk, doableNaxx40Bosses_Razuvious, DisableQuestMarkers, DisableRDF, VanillaPvpTitlesKeepPostVanilla, VanillaPvpTitlesEarnPostVanilla, BotAccountsEarnPvPTitles, BotOnlyAdjustments, BotsSkipProgression, AccountWideProgression;
+    bool enabled, questXpFix, enforceGroupRules, EnableSetRepCommand, EnableAllSpellRanks, LimitedSetRepCommand, fishingFix, simpleConfigOverride, MaxMonsterSight, questMoneyAtLevelCap, repeatableVanillaQuestsXp, disableDefaultProgression, earlyDungeonSet2, earlyScourgeBosses, requireNaxxStrath, doableNaxx40Bosses_4H, doableNaxx40Bosses_Gluth, doableNaxx40Bosses_Patchwerk, doableNaxx40Bosses_Razuvious, DisableQuestMarkers, DisableRDF, VanillaPvpTitlesKeepPostVanilla, VanillaPvpTitlesEarnPostVanilla, BotAccountsEarnPvPTitles, BotOnlyAdjustments, BotsSkipProgression, AccountWideProgression, AccountWideAttunements;
     int progressionLimit, startingProgression, tbcRacesProgressionLevel, tbcRacesStartingProgression, deathKnightProgressionLevel, deathKnightStartingProgression, RequiredZulGurubProgression, RequiredZulAmanProgression, tbcArenaSeason, wotlkArenaSeason, BotAccountsMaxLevel;
     uint32 VanillaPvpKillRank1, VanillaPvpKillRank2, VanillaPvpKillRank3, VanillaPvpKillRank4, VanillaPvpKillRank5, VanillaPvpKillRank6, VanillaPvpKillRank7, VanillaPvpKillRank8, VanillaPvpKillRank9, VanillaPvpKillRank10, VanillaPvpKillRank11, VanillaPvpKillRank12, VanillaPvpKillRank13, VanillaPvpKillRank14;
     std::string excludedAccountsRegex, botAccountsRegex, sharedFactionIdsRegex;
@@ -439,6 +444,7 @@ public:
     void checkIPProgression(Player* player);
     void UpdateProgressionAchievements(Player* player, uint16 achievementID);
     void UpdateGroupAttunement(Player* player, std::string location);
+    void GrantAccountWideAttunements(Player* player);
     void UpdateRNDbotSpells(Player* player);
     void checkKillProgression(Player* player, Creature* killed);
     bool checkCustomKillProgression(Player* killer, Creature* killed);
