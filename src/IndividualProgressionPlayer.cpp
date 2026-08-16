@@ -1184,14 +1184,13 @@ public:
    
             if (killed->GetEntry() == COLOSSUS_ZORA || killed->GetEntry() == COLOSSUS_REGAL || killed->GetEntry() == COLOSSUS_ASHI)
             {
-                // no group
-                if (killed->GetEntry() == COLOSSUS_ZORA)
-                    killer->CompleteQuest(QUEST_COLOSSUS_ZORA);
-                else if (killed->GetEntry() == COLOSSUS_REGAL)
-                    killer->CompleteQuest(QUEST_COLOSSUS_REGAL);
-                else if (killed->GetEntry() == COLOSSUS_ASHI)
-                    killer->CompleteQuest(QUEST_COLOSSUS_ASHI);    
-               
+                // KilledMonsterCredit (not CompleteQuest) so the quest-log objective
+                // counter actually advances 0/1 -> 1/1 on the client; CompleteQuest
+                // only flipped server-side state, so the log looked unfinished even
+                // when the turn-in worked. A SmartAI on-death rule additionally
+                // credits every player in range, covering kills landed by bots or
+                // NPCs outside the group — this path keeps distant group members
+                // (dead, released, back at camp) covered.
                 if (group)
                 {
                     for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
@@ -1200,14 +1199,12 @@ public:
                         if (!member || !sIndividualProgression->isNormalAccount(member))
                             continue;
 
-                        if (killed->GetEntry() == COLOSSUS_ZORA)
-                            member->CompleteQuest(QUEST_COLOSSUS_ZORA);
-                        else if (killed->GetEntry() == COLOSSUS_REGAL)
-                            member->CompleteQuest(QUEST_COLOSSUS_REGAL);
-                        else if (killed->GetEntry() == COLOSSUS_ASHI)
-                            member->CompleteQuest(QUEST_COLOSSUS_ASHI);
+                        member->KilledMonsterCredit(killed->GetEntry());
                     }
                 }
+                else if (sIndividualProgression->isNormalAccount(killer))
+                    killer->KilledMonsterCredit(killed->GetEntry());
+
                 return;
             }
 
