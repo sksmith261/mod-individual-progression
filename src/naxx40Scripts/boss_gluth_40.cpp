@@ -237,8 +237,9 @@ public:
                             if (damage > 0)
                                 Unit::DealDamage(me, z, damage);
 
-                            // Heal Gluth for 5% of max health
-                            uint32 hp = uint32(me->GetMaxHealth() * 0.05f);
+                            // Reizan: devour heal softened 5% -> 2% of max
+                            // health per zombie eaten.
+                            uint32 hp = uint32(me->GetMaxHealth() * 0.02f);
                             me->SetHealth(me->GetHealth() + hp);
                             break; // Only eat one zombie
                         }
