@@ -420,10 +420,10 @@ public:
             }
             events.ScheduleEvent(EVENT_MINION_CHECK_DISTANCE, 5s);
 
-            if (me->GetEntry() == NPC_STALAGG_40) // This event needs synchronisation, called for stalagg only
-            {
-                events.ScheduleEvent(EVENT_MINION_MAGNETIC_PULL, 20s);
-            }
+            // Reizan: Magnetic Pull disabled. It swapped the two tanks
+            // every 20s (teleport + threat transfer); the event is simply
+            // never scheduled, so each tank keeps his own pet all phase.
+            // The handler below is left intact should it ever be restored.
 
             if (Creature* cr = me->GetInstanceScript()->GetCreature(DATA_THADDIUS_BOSS))
             {
