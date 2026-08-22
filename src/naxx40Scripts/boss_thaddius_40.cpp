@@ -414,7 +414,13 @@ public:
                 events.ScheduleEvent(EVENT_MINION_STATIC_FIELD, 5s);
                 Talk(SAY_FEUG_AGGRO);
             }
-            events.ScheduleEvent(EVENT_MINION_CHECK_DISTANCE, 5s);
+            // Reizan: Tesla coil overload disabled. The tether check fired
+            // Tesla Shock (~4374 damage) at a random raider every 1.5s once
+            // a pet strayed 28y from its spawn — unmanageable for a bot
+            // raid, so the check is never scheduled. The chain visuals are
+            // applied elsewhere and remain; the handler below is left intact
+            // should it ever be restored.
+            // events.ScheduleEvent(EVENT_MINION_CHECK_DISTANCE, 5s);
 
             // Reizan: Magnetic Pull disabled. It swapped the two tanks
             // every 20s (teleport + threat transfer); the event is simply
