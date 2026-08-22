@@ -226,7 +226,11 @@ public:
             {
                 case EVENT_MARK_CAST:
                     me->CastSpell(me, TABLE_SPELL_MARK[horsemanId], false);
-                    events.Repeat(12s);
+                    // Reizan: 16s, was 12s. Stacks build a third slower, so
+                    // there is room to rotate a camp out and back without
+                    // touching the damage table — the cliff from 3 to 4
+                    // stacks is what makes the swaps matter.
+                    events.Repeat(16s);
                     return;
                 case EVENT_BERSERK:
                     Talk(SAY_SPECIAL);
@@ -236,7 +240,7 @@ public:
                     // Talk(SAY_TAUNT); // should be called by instance scripts, see vMangos instance_naxxramas.cpp
                     if (horsemanId == HORSEMAN_ZELIEK)
                     {
-                        int32 bp0 = 443;
+                        int32 bp0 = 332;  // Reizan: -25%, was 443
 
                         if (sIndividualProgression->doableNaxx40Bosses_4H)
                             bp0 = 222;
