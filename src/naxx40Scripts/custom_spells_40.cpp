@@ -277,11 +277,20 @@ class spell_sapphiron_frost_aura_40 : public AuraScript
     void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
     {
         Unit* caster = GetCaster();
-        if (!caster || (caster->GetMap()->GetDifficulty() != RAID_DIFFICULTY_10MAN_HEROIC))
+        if (!caster)
             return;
-        if (urand(0, 99) == 0) // 1% chance to receive extra Frost Aura tick
-            return;
-        amount *= 0.5; // Reduce damage by 50% (1200bp -> 600bp)
+
+        // naxx-40 baseline, unchanged: half damage, with a 1% chance of a
+        // full-strength tick slipping through.
+        if (caster->GetMap()->GetDifficulty() == RAID_DIFFICULTY_10MAN_HEROIC && urand(0, 99) != 0)
+            amount *= 0.5; // 1200bp -> 600bp
+
+        // Reizan: a quarter of whatever that came to. Frost Aura is constant
+        // unavoidable raid damage for the whole fight, so it sets the floor
+        // on how much healing throughput the encounter demands — and bot
+        // healers spend part of every air phase behind an ice block instead
+        // of casting.
+        amount *= 0.25;
     }
 
     void Register() override
