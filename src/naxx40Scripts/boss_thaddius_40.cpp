@@ -125,6 +125,7 @@ public:
         SummonList summons;
         uint32 summonTimer{};
         uint32 reviveTimer{};
+        uint32 summonsDead{};
         uint32 resetTimer{};
         bool ballLightningEnabled;
 
@@ -141,13 +142,13 @@ public:
         {
             if (param == ACTION_SUMMON_DIED)
             {
-                if (summonTimer)
-                {
-                    summonTimer = 0;
+                // Reizan: linked death removed. A dead pet stays dead —
+                // upstream started a 5s window here and resurrected it at
+                // full health if its twin had not also died. Phase two now
+                // begins once BOTH are down, whatever the gap between them.
+                ++summonsDead;
+                if (summonsDead >= 2)
                     reviveTimer = 1;
-                    return;
-                }
-                summonTimer = 1;
             }
         }
 
@@ -160,6 +161,7 @@ public:
             me->SetControlled(true, UNIT_STATE_ROOT);
             summonTimer = 0;
             reviveTimer = 0;
+            summonsDead = 0;
             resetTimer = 1;
             me->SetPosition(me->GetHomePosition());
             ballLightningEnabled = false;
@@ -273,15 +275,9 @@ public:
             if (me->HasUnitState(UNIT_STATE_CASTING))
                 return;
 
-            if (summonTimer) // Revive
-            {
-                summonTimer += diff;
-                if (summonTimer >= 5000)
-                {
-                    summons.DoAction(ACTION_RESTORE);
-                    summonTimer = 0;
-                }
-            }
+            // Reizan: the revive tick is retired with the linked-death
+            // mechanic; summonTimer is never armed. ACTION_RESTORE is left
+            // in the minion AI for the wipe/reset path.
 
             switch (events.ExecuteEvent())
             {
