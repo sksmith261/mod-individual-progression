@@ -140,9 +140,6 @@ public:
         void Reset() override
         {
             BossAI::Reset();
-            // Release the corner root before returning home, or a wipe
-            // leaves the horseman anchored where it fought.
-            me->SetControlled(false, UNIT_STATE_ROOT);
             me->SetPosition(me->GetHomePosition());
             events.Reset();
             events.RescheduleEvent(EVENT_MARK_CAST, 20s);
@@ -206,29 +203,6 @@ public:
         {
             BossAI::JustEngagedWith(who);
             Talk(SAY_AGGRO);
-
-            // Reizan: each horseman takes its own corner on aggro and is
-            // rooted there for the fight. The four spawn within fifteen
-            // yards of each other, so separating them was left to the raid
-            // dragging them out by threat — which meant every mis-taunt,
-            // every threat wipe from a Mark, and every tank swap could pull
-            // one out of position and collapse the camps together. Their
-            // placement is a mechanic now, not something the raid maintains.
-            //
-            // Corners match the camps the raid uses (the same quadrant
-            // waypoints the wotlk script walks its horsemen to).
-            static Position const corners[4] =
-            {
-                {2514.57f, -2899.91f, 241.28f, 4.15f},  // HORSEMAN_ZELIEK
-                {2471.76f, -2948.90f, 241.28f, 5.70f},  // HORSEMAN_BLAUMEUX
-                {2583.90f, -2971.60f, 241.35f, 2.60f},  // HORSEMAN_MOGRAINE
-                {2542.90f, -3015.00f, 241.35f, 1.20f},  // HORSEMAN_KORTHAZZ
-            };
-
-            Position const& corner = corners[horsemanId];
-            me->NearTeleportTo(corner.GetPositionX(), corner.GetPositionY(), corner.GetPositionZ(),
-                               corner.GetOrientation());
-            me->SetControlled(true, UNIT_STATE_ROOT);
 
             events.ScheduleEvent(EVENT_HEALTH_CHECK, 1s);
         }
