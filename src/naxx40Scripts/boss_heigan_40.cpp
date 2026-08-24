@@ -23,6 +23,7 @@
 #include "SpellInfo.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
+#include "Timer.h"
 #include "naxxramas.h"
 
 enum Says
@@ -107,6 +108,18 @@ public:
         bool _moveRight{true};
         TaskScheduler _eruptionScheduler;
 
+        // Reizan: the choreography clock. The scheduler knows exactly when
+        // the next eruption fires and when the fast dance begins, but a
+        // TaskScheduler cannot be queried — so record the absolute times
+        // (getMSTime, shared process-wide) as they are scheduled, and expose
+        // them via GetData. The playerbot module reads these to move BEFORE
+        // events instead of reacting to their side effects: specifically,
+        // the fast dance's first eruption comes 7s after a transition that
+        // bots could previously only detect ~1.2s in via the Plague Cloud
+        // aura — too late for the far ring's ~6s walk off the platform.
+        uint32 _nextEruptionMs{0};
+        uint32 _fastDanceStartMs{0};
+
         GuidList portedPlayersThisPhase;
 
         void Reset() override
@@ -115,6 +128,8 @@ public:
             _currentPhase = 0;
             _currentSection = 3;
             _moveRight = true;
+            _nextEruptionMs = 0;
+            _fastDanceStartMs = 0;
             _eruptionScheduler.CancelAll();
             portedPlayersThisPhase.clear();
             KillPlayersInTheTunnel();
@@ -170,6 +185,8 @@ public:
                     DoEventTeleportPlayer(); // this currently kills the players that get teleported and was not set to repeat, so setting repeat timer really high.
                 }, 600s);
 
+                _nextEruptionMs = getMSTime() + 15000;
+                _fastDanceStartMs = getMSTime() + 90000;
                 _eruptionScheduler.Schedule(15s, [this](TaskContext context){
                     instance->SetData(DATA_HEIGAN_ERUPTION, _currentSection);
                     if (_currentSection == 3)
@@ -179,6 +196,7 @@ public:
 
                     _moveRight ? _currentSection++ : _currentSection--;
                     Talk(SAY_TAUNT);
+                    _nextEruptionMs = getMSTime() + 10000;
                     context.Repeat(10s);
                 }).Schedule(90s, [this](TaskContext /*context*/) {
                     StartFightPhase(PHASE_FAST_DANCE);
@@ -200,6 +218,8 @@ public:
                     DoCastSelf(SPELL_PLAGUE_CLOUD);
                 });
 
+                _nextEruptionMs = getMSTime() + 7000;
+                _fastDanceStartMs = getMSTime();
                 _eruptionScheduler.Schedule(7s, [this](TaskContext context){
                     instance->SetData(DATA_HEIGAN_ERUPTION, _currentSection);
                     if (_currentSection == 3)
@@ -208,12 +228,28 @@ public:
                         _moveRight = true;
 
                     _moveRight ? _currentSection++ : _currentSection--;
+                    _nextEruptionMs = getMSTime() + 4000;
                     context.Repeat(4s);
                 }).Schedule(45s, [this](TaskContext /*context*/) {
                     StartFightPhase(PHASE_SLOW_DANCE);
                     Talk(EMOTE_DANCE_END); // avoid play the emote on aggro
                 });
             }
+        }
+
+        // Reizan: 301 = absolute ms of the next eruption, 302 = absolute ms
+        // the current/next fast dance starts (future while phase one runs,
+        // just-past during the dance). Read by mod-playerbots; keep the ids
+        // in sync with NaxxBossHelper.h.
+        uint32 GetData(uint32 type) const override
+        {
+            if (type == 301)
+                return _nextEruptionMs;
+
+            if (type == 302)
+                return _fastDanceStartMs;
+
+            return 0;
         }
 
         bool IsInRoom(Unit* who)
