@@ -90,6 +90,14 @@ public:
                 if (until == Milliseconds::max() || until > 60s)
                     return 0;
 
+                // The event can be overdue while a cast blocks ExecuteEvent —
+                // UpdateAI returns early during casts but the event clock kept
+                // running — and a negative duration pushed through uint32
+                // wrapped to ~4.3 billion, which read as a deadline forever in
+                // the future. Overdue means the drop is imminent: say "now".
+                if (until <= 0ms)
+                    return getMSTime();
+
                 return getMSTime() + uint32(until.count());
             }
 
