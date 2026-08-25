@@ -22,6 +22,7 @@
 #include "SpellAuras.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
+#include "Timer.h"
 #include "naxxramas.h"
 
 enum Spells
@@ -71,6 +72,28 @@ public:
             events.Reset();
             summons.DespawnAll();
             dropSludgeTimer = 0;
+        }
+
+        // Reizan: the choreography clock, same contract as boss_heigan_40.
+        // 301 = absolute ms (getMSTime) of the next Poison Cloud. This boss
+        // casts the cloud as a TRIGGERED spell — instant, never visible in
+        // GetCurrentSpell — so the playerbot kite could only ever guess on a
+        // blind timer whose phase against the real drops was random. Reading
+        // the EventMap directly is what lets the tank step the instant each
+        // cloud lands instead of standing in it. Keep the id in sync with
+        // NaxxBossHelper.h.
+        uint32 GetData(uint32 type) const override
+        {
+            if (type == 301)
+            {
+                Milliseconds const until = events.GetTimeUntilEvent(EVENT_POISON_CLOUD);
+                if (until == Milliseconds::max() || until > 60s)
+                    return 0;
+
+                return getMSTime() + uint32(until.count());
+            }
+
+            return 0;
         }
 
         void PullChamberAdds()
