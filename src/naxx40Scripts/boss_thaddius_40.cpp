@@ -383,8 +383,6 @@ public:
             overload = false;
             events.Reset();
             me->SetControlled(false, UNIT_STATE_STUNNED);
-            // Release the spawn root, or a wipe leaves the pet anchored.
-            me->SetControlled(false, UNIT_STATE_ROOT);
             if (Creature* cr = me->FindNearestCreature(NPC_TESLA_COIL, 150.0f))
             {
                 cr->CastSpell(cr, me->GetEntry() == NPC_STALAGG_40 ? SPELL_STALAGG_CHAIN : SPELL_FEUGEN_CHAIN, false);
@@ -402,14 +400,6 @@ public:
         void JustEngagedWith(Unit* pWho) override
         {
             me->SetInCombatWithZone();
-
-            // Reizan: pinned to its spawn for the fight, same reasoning as
-            // the Four Horsemen. Each pet belongs on its own platform, and
-            // leaving that to the raid holding threat perfectly meant any
-            // slip walked it off the edge — Feugen ended up underneath the
-            // platform in the slime more than once. The platforms are fixed
-            // geometry, so the placement should be too.
-            me->SetControlled(true, UNIT_STATE_ROOT);
             if (Creature* cr = me->FindNearestCreature(NPC_TESLA_COIL, 150.f, true))
             {
                 myCoil = cr->GetGUID();
