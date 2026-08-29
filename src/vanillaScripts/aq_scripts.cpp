@@ -1,4 +1,5 @@
 #include "IndividualProgression.h"
+#include "ObjectMgr.h"
 #include "ScriptMgr.h"
 #include "Player.h"
 #include "GameObjectAI.h"
@@ -420,7 +421,25 @@ public:
 
     bool OnGossipHello(Player* player, GameObject* go) override
     {
-        if ((player->GetQuestStatus(QUEST_BANG_A_GONG) == QUEST_STATUS_REWARDED) || (player->GetQuestStatus(SIMPLY_BANG_A_GONG) == QUEST_STATUS_REWARDED))
+        // The IP skip must never lock the real Scarab Lord quest out of the
+        // gong. The gong both starts and ends Bang a Gong! (8743), and the
+        // old check suppressed the quest menu forever once EITHER gong
+        // quest was rewarded — so a player who used Simply Bang a Gong! to
+        // progress could later finish the entire scepter chain and find the
+        // gong mute: unable to see, accept, or turn in the questline's
+        // final step. The gate-replay convenience now yields whenever the
+        // player has real business with 8743 — takeable, in progress, or
+        // ready to turn in.
+        QuestStatus const scarabLord = player->GetQuestStatus(QUEST_BANG_A_GONG);
+        bool scarabLordPending =
+            scarabLord == QUEST_STATUS_INCOMPLETE || scarabLord == QUEST_STATUS_COMPLETE;
+        if (!scarabLordPending && scarabLord == QUEST_STATUS_NONE)
+            if (Quest const* quest = sObjectMgr->GetQuestTemplate(QUEST_BANG_A_GONG))
+                scarabLordPending = player->CanTakeQuest(quest, false);
+
+        if (!scarabLordPending &&
+            ((player->GetQuestStatus(QUEST_BANG_A_GONG) == QUEST_STATUS_REWARDED) ||
+             (player->GetQuestStatus(SIMPLY_BANG_A_GONG) == QUEST_STATUS_REWARDED)))
         {
             if (auto* gongAI = dynamic_cast<gobject_scarab_gongAI*>(go->AI()))
                 gongAI->OpenGate(player, false);
