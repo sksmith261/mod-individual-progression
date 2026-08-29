@@ -101,8 +101,21 @@ public:
             return false;
         }
 
-        player = PlayerIdentifier::FromTargetOrSelf(handler);
-        Player* target = player->GetConnectedPlayer();
+        // Honour a player named on the command line - the unconditional
+        // overwrite discarded it, so ".ip set Name 7" silently applied to
+        // the caller's target (or the caller), and from the console it
+        // dereferenced a null player. Fall back to target-or-self only
+        // when no name was given, exactly as the get handler does.
+        if (!player)
+            player = PlayerIdentifier::FromTargetOrSelf(handler);
+
+        Player* target = player ? player->GetConnectedPlayer() : nullptr;
+        if (!target)
+        {
+            handler->SendSysMessage("Player not found or not online.");
+            return false;
+        }
+
         std::string playername = target->GetName();
         uint8 currentState = sIndividualProgression->GetPlayerProgressionFromQuests(target);
         uint32 currentArea = target->GetAreaId();
@@ -338,8 +351,18 @@ public:
             return false;
         }
 
-        player = PlayerIdentifier::FromTargetOrSelf(handler);
-        Player* target = player->GetConnectedPlayer();
+        // Same slip as the set handler had: a name on the command line was
+        // discarded by the unconditional overwrite.
+        if (!player)
+            player = PlayerIdentifier::FromTargetOrSelf(handler);
+
+        Player* target = player ? player->GetConnectedPlayer() : nullptr;
+        if (!target)
+        {
+            handler->SendSysMessage("Player not found or not online.");
+            return false;
+        }
+
         uint32 progressionLevel = sIndividualProgression->GetPlayerProgressionFromQuests(target);
         std::string playername = target->GetName();
 
